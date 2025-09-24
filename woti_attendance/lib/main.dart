@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'register_screen.dart';
+import 'attendance_screen.dart';
 import 'app_theme.dart';
 
 // Deloitte Green
@@ -93,7 +94,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(),
+        '/home': (context) => AttendanceScreen(),
         '/register': (context) => RegisterScreen(),
       },
     );
@@ -271,30 +272,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-// Dummy HomeScreen
-class HomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('WoTi Attendance', style: TextStyle(color: kDeloitteGreen)),
-        backgroundColor: Colors.black,
-      ),
-      body: Center(
-        child: Text(
-          'Welcome!',
-          style: TextStyle(
-            color: kDeloitteGreen,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      backgroundColor: Colors.black,
     );
   }
 }
