@@ -1,9 +1,4 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// This is a basic Flutter widget test for WoTi Attendance app.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,20 +6,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:woti_attendance/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App launches and shows login screen', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the login screen is displayed with WoTi Attendance title
+    expect(find.text('WoTi Attendance'), findsWidgets);
+    expect(find.text('Welcome Back!'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(2)); // Email and password fields
+    expect(find.text('Login'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Register button navigates to register screen', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(MyApp());
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Find and tap the register button
+    await tester.tap(find.text("Don't have an account? Register"));
+    await tester.pumpAndSettle(); // Wait for navigation to complete
+
+    // Verify that we're on the register screen
+    expect(find.text('Register for WoTi Attendance'), findsOneWidget);
   });
 }

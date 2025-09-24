@@ -158,17 +158,27 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       // Calculate distance to facility if facility coordinates are available
       if (_facility != null && 
           _facility!['latitude'] != null && 
-          _facility!['longitude'] != null) {
+          _facility!['longitude'] != null &&
+          _facility!['latitude'] != 0 && 
+          _facility!['longitude'] != 0) {
         double distance = Geolocator.distanceBetween(
           position.latitude,
           position.longitude,
-          _facility!['latitude'],
-          _facility!['longitude'],
+          _facility!['latitude'].toDouble(),
+          _facility!['longitude'].toDouble(),
         );
         
         setState(() {
           _distanceToFacility = distance;
         });
+      } else {
+        // If facility coordinates are not set, show warning
+        setState(() {
+          _distanceToFacility = null;
+        });
+        if (_facility != null) {
+          _showError('Facility coordinates not set. Distance validation disabled.');
+        }
       }
     } catch (e) {
       _showError('Failed to get location: $e');
@@ -228,10 +238,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       return;
     }
 
-    // Validate distance to facility
+    // Validate distance to facility (only if facility coordinates are available)
     if (_distanceToFacility != null && _distanceToFacility! > FACILITY_RADIUS_METERS) {
       _showError('You are too far from the facility (${_distanceToFacility!.toStringAsFixed(0)}m). Please get closer to check in.');
       return;
+    }
+
+    // If facility coordinates are not set, show a warning but allow check-in
+    if (_facility != null && 
+        (_facility!['latitude'] == null || 
+         _facility!['longitude'] == null || 
+         _facility!['latitude'] == 0 || 
+         _facility!['longitude'] == 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Warning: Facility coordinates not set. Location validation is disabled.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
 
     setState(() {
@@ -288,10 +313,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       return;
     }
 
-    // Validate distance to facility
+    // Validate distance to facility (only if facility coordinates are available)
     if (_distanceToFacility != null && _distanceToFacility! > FACILITY_RADIUS_METERS) {
       _showError('You are too far from the facility (${_distanceToFacility!.toStringAsFixed(0)}m). Please get closer to check out.');
       return;
+    }
+
+    // If facility coordinates are not set, show a warning but allow check-out
+    if (_facility != null && 
+        (_facility!['latitude'] == null || 
+         _facility!['longitude'] == null || 
+         _facility!['latitude'] == 0 || 
+         _facility!['longitude'] == 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Warning: Facility coordinates not set. Location validation is disabled.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
 
     setState(() {
@@ -441,10 +481,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   String _calculateCurrentHours() {
     if (_currentAttendance == null) return '0.00';
     
-    final checkInTime = DateTime.parse(_currentAttendance!['check_in_time']);
-    final now = DateTime.now();
-    final hours = now.difference(checkInTime).inMinutes / 60.0;
-    return hours.toStringAsFixed(2);
+    try {
+      final checkInTime = DateTime.parse(_currentAttendance!['check_in_time']);
+      final now = DateTime.now();
+      final hours = now.difference(checkInTime).inMinutes / 60.0;
+      return hours >= 0 ? hours.toStringAsFixed(2) : '0.00';
+    } catch (e) {
+      return '0.00';
+    }
   }
 
   Widget _buildLocationCard() {
@@ -515,6 +559,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             ? kDeloitteGreen
                             : Colors.orange,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (_facility != null) ...[
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.info, color: Colors.orange, size: 16),
+                    SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Facility coordinates not set - location validation disabled',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
