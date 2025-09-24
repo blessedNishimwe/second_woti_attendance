@@ -203,8 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     DropdownButtonFormField<String>(
                       value: _selectedRegionId,
                       decoration: InputDecoration(labelText: 'Region'),
-                      style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
-  dropdownColor: const Color(0xFF222222), // optional: dark popup background
+                  
                       items: _regions
                           .map<DropdownMenuItem<String>>((r) => DropdownMenuItem<String>(
                                 value: r['id'] as String,
