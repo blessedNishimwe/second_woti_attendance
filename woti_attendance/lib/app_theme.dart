@@ -84,10 +84,10 @@ class AppTheme {
       ),
       textStyle: const TextStyle(color: kTextBright, fontSize: 16),
       menuStyle: MenuStyle(
-        //backgroundColor: MaterialStatePropertyAll(kCardDark),
-        //surfaceTintColor: MaterialStatePropertyAll(kCardDark),
-        style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
-        dropdownColor: const Color(0xFF222222), // optional: dark popup background
+        backgroundColor: MaterialStatePropertyAll(kCardDark),
+        surfaceTintColor: MaterialStatePropertyAll(kCardDark),
+        //style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
+       // dropdownColor: const Color(0xFF222222), // optional: dark popup background
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
