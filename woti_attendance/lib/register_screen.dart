@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-const Color kDeloitteGreen = Color(0xFF00A859);
+import 'app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
