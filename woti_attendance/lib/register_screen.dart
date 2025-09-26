@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-const Color kDeloitteGreen = Color(0xFF00A859);
+import 'app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -130,72 +129,72 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600;
+    
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Register for WoTi Attendance'),
-        backgroundColor: Colors.black,
-        foregroundColor: kDeloitteGreen,
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24),
-          child: Card(
-            color: Color(0xFF222222),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+          padding: EdgeInsets.all(isWideScreen ? 32 : 24),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: isWideScreen ? 600 : double.infinity,
             ),
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "WoTi Attendance",
-                      style: theme.textTheme.displayLarge,
-                    ),
-                    SizedBox(height: 24),
-                    TextFormField(
-                      controller: _nameController,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(labelText: 'Full Name'),
-                      validator: (val) => val!.isEmpty ? 'Enter your name' : null,
-                    ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(labelText: 'Email'),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (val) =>
-                          val!.isEmpty ? 'Enter your email' : null,
-                    ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(labelText: 'Password'),
-                      obscureText: true,
-                      validator: (val) => val!.length < 6
-                          ? 'Password must be at least 6 chars'
-                          : null,
-                    ),
-                    SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedRole,
-                      decoration: InputDecoration(labelText: 'Role'),
-                      items: [
-                        DropdownMenuItem(
-                            value: 'worker', child: Text('Worker')),
-                        DropdownMenuItem(
-                            value: 'manager', child: Text('Manager')),
-                        DropdownMenuItem(
-                            value: 'admin', child: Text('Admin')),
-                      ],
-                      onChanged: (val) =>
-                          setState(() => _selectedRole = val),
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(isWideScreen ? 32 : 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "WoTi Attendance",
+                        style: theme.textTheme.displayLarge,
+                      ),
+                      SizedBox(height: 24),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(labelText: 'Full Name'),
+                        validator: (val) => val!.isEmpty ? 'Enter your name' : null,
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: InputDecoration(labelText: 'Email'),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (val) =>
+                            val!.isEmpty ? 'Enter your email' : null,
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(labelText: 'Password'),
+                        obscureText: true,
+                        validator: (val) => val!.length < 6
+                            ? 'Password must be at least 6 chars'
+                            : null,
+                      ),
+                      SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: _selectedRole,
+                        decoration: InputDecoration(labelText: 'Role'),
+                        items: [
+                          DropdownMenuItem(
+                              value: 'worker', child: Text('Worker')),
+                          DropdownMenuItem(
+                              value: 'manager', child: Text('Manager')),
+                          DropdownMenuItem(
+                              value: 'admin', child: Text('Admin')),
+                        ],
+                        onChanged: (val) =>
+                            setState(() => _selectedRole = val),
                       validator: (val) =>
                           val == null ? 'Select a role' : null,
                     ),
@@ -203,13 +202,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     DropdownButtonFormField<String>(
                       value: _selectedRegionId,
                       decoration: InputDecoration(labelText: 'Region'),
-                      style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
-  dropdownColor: const Color(0xFF222222), // optional: dark popup background
                       items: _regions
                           .map<DropdownMenuItem<String>>((r) => DropdownMenuItem<String>(
                                 value: r['id'] as String,
-                                child: Text(r['name'],
-                                    style: TextStyle(color: Colors.white)),
+                                child: Text(r['name']),
                               ))
                           .toList(),
                       onChanged: (val) {
@@ -223,13 +219,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     DropdownButtonFormField<String>(
                       value: _selectedCouncilId,
                       decoration: InputDecoration(labelText: 'Council'),
-                      style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
-                      dropdownColor: const Color(0xFF222222), // optional: dark popup background
                       items: _councils
                           .map<DropdownMenuItem<String>>((c) => DropdownMenuItem<String>(
                                 value: c['id'] as String,
-                                child: Text(c['name'],
-                                    style: TextStyle(color: Colors.white)),
+                                child: Text(c['name']),
                               ))
                           .toList(),
                       onChanged: (val) {
@@ -243,13 +236,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     DropdownButtonFormField<String>(
                       value: _selectedFacilityId,
                       decoration: InputDecoration(labelText: 'Facility'),
-                      style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
-                       dropdownColor: const Color(0xFF222222), // optional: dark popup background
                       items: _facilities
                           .map<DropdownMenuItem<String>>((f) => DropdownMenuItem<String>(
                                 value: f['id'] as String,
-                                child: Text(f['name'],
-                                    style: TextStyle(color: Colors.white)),
+                                child: Text(f['name']),
                               ))
                           .toList(),
                       onChanged: (val) =>
@@ -265,10 +255,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: ElevatedButton(
                               onPressed: _register,
                               child: Text('Register'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kDeloitteGreen,
-                                foregroundColor: Colors.black,
-                              ),
                             ),
                           ),
                   ],

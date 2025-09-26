@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'app_theme.dart';
 
@@ -26,8 +23,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic>? _facility;
   double? _distanceToFacility;
-  File? _capturedPhoto;
-  final ImagePicker _picker = ImagePicker();
 
   // Constants for validation
   static const double FACILITY_RADIUS_METERS = 100.0; // 100 meters radius
@@ -189,48 +184,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-  Future<void> _capturePhoto() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-        maxWidth: 1024,
-        maxHeight: 1024,
-      );
 
-      if (image != null) {
-        setState(() {
-          _capturedPhoto = File(image.path);
-        });
-      }
-    } catch (e) {
-      _showError('Failed to capture photo: $e');
-    }
-  }
-
-  Future<String?> _uploadPhoto(File photo) async {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return null;
-
-      final bytes = await photo.readAsBytes();
-      final fileExt = photo.path.split('.').last;
-      final fileName = '${user.id}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
-      
-      await Supabase.instance.client.storage
-          .from('attendance_photos')
-          .uploadBinary(fileName, bytes);
-
-      final url = Supabase.instance.client.storage
-          .from('attendance_photos')
-          .getPublicUrl(fileName);
-
-      return url;
-    } catch (e) {
-      _showError('Failed to upload photo: $e');
-      return null;
-    }
-  }
 
   Future<void> _checkIn() async {
     if (_currentPosition == null) {
@@ -264,11 +218,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     });
 
     try {
-      String? photoUrl;
-      if (_capturedPhoto != null) {
-        photoUrl = await _uploadPhoto(_capturedPhoto!);
-      }
-
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null) {
         await Supabase.instance.client.from('attendance').insert({
@@ -277,14 +226,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           'check_in_time': DateTime.now().toIso8601String(),
           'check_in_latitude': _currentPosition!.latitude,
           'check_in_longitude': _currentPosition!.longitude,
-          'check_in_photo': photoUrl,
           'status': 'checked_in',
         });
 
         await _checkCurrentAttendanceStatus();
-        setState(() {
-          _capturedPhoto = null;
-        });
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -339,11 +284,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     });
 
     try {
-      String? photoUrl;
-      if (_capturedPhoto != null) {
-        photoUrl = await _uploadPhoto(_capturedPhoto!);
-      }
-
       // Calculate hours worked
       final checkInTime = DateTime.parse(_currentAttendance!['check_in_time']);
       final checkOutTime = DateTime.now();
@@ -355,16 +295,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             'check_out_time': checkOutTime.toIso8601String(),
             'check_out_latitude': _currentPosition!.latitude,
             'check_out_longitude': _currentPosition!.longitude,
-            'check_out_photo': photoUrl,
             'hours_worked': hoursWorked,
             'status': 'completed',
           })
           .eq('id', _currentAttendance!['id']);
 
       await _checkCurrentAttendanceStatus();
-      setState(() {
-        _capturedPhoto = null;
-      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -399,8 +335,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _buildStatusCard() {
+    final theme = Theme.of(context);
+    
     return Card(
-      color: kCardDark,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -410,8 +347,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               children: [
                 Text(
                   'Status:',
-                  style: TextStyle(
-                    color: kTextBright,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -441,14 +377,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 children: [
                   Text(
                     'Checked in at:',
-                    style: TextStyle(color: kTextFaint),
+                    style: theme.textTheme.bodySmall,
                   ),
                   Text(
                     DateFormat('HH:mm').format(
                       DateTime.parse(_currentAttendance!['check_in_time']),
                     ),
-                    style: TextStyle(
-                      color: kTextBright,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -460,11 +395,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 children: [
                   Text(
                     'Hours worked:',
-                    style: TextStyle(color: kTextFaint),
+                    style: theme.textTheme.bodySmall,
                   ),
                   Text(
                     _calculateCurrentHours(),
-                    style: TextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: kDeloitteGreen,
                       fontWeight: FontWeight.bold,
                     ),
@@ -492,8 +427,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _buildLocationCard() {
+    final theme = Theme.of(context);
+    
     return Card(
-      color: kCardDark,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -505,8 +441,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 SizedBox(width: 8),
                 Text(
                   'Location',
-                  style: TextStyle(
-                    color: kTextBright,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -532,11 +467,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             if (_currentPosition != null) ...[
               Text(
                 'Latitude: ${_currentPosition!.latitude.toStringAsFixed(6)}',
-                style: TextStyle(color: kTextFaint),
+                style: theme.textTheme.bodySmall,
               ),
               Text(
                 'Longitude: ${_currentPosition!.longitude.toStringAsFixed(6)}',
-                style: TextStyle(color: kTextFaint),
+                style: theme.textTheme.bodySmall,
               ),
               if (_distanceToFacility != null) ...[
                 SizedBox(height: 8),
@@ -597,8 +532,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       return SizedBox.shrink();
     }
 
+    final theme = Theme.of(context);
+
     return Card(
-      color: kCardDark,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -610,8 +546,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 SizedBox(width: 8),
                 Text(
                   'Facility',
-                  style: TextStyle(
-                    color: kTextBright,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -621,8 +556,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             SizedBox(height: 12),
             Text(
               _facility!['name'] ?? 'Unknown Facility',
-              style: TextStyle(
-                color: kTextBright,
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -631,12 +565,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               SizedBox(height: 4),
               Text(
                 _facility!['councils']['name'] ?? '',
-                style: TextStyle(color: kTextFaint),
+                style: theme.textTheme.bodySmall,
               ),
               if (_facility!['councils']['regions'] != null)
                 Text(
                   _facility!['councils']['regions']['name'] ?? '',
-                  style: TextStyle(color: kTextFaint),
+                  style: theme.textTheme.bodySmall,
                 ),
             ],
           ],
@@ -645,60 +579,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildPhotoSection() {
-    return Card(
-      color: kCardDark,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Icon(Icons.camera_alt, color: kDeloitteGreen),
-                SizedBox(width: 8),
-                Text(
-                  'Photo',
-                  style: TextStyle(
-                    color: kTextBright,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            if (_capturedPhoto != null) ...[
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: FileImage(_capturedPhoto!),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              SizedBox(height: 12),
-            ],
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _capturePhoto,
-                icon: Icon(Icons.camera_alt),
-                label: Text(_capturedPhoto != null ? 'Retake Photo' : 'Capture Photo'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600;
+
     return Scaffold(
-      backgroundColor: kBackgroundDark,
       appBar: AppBar(
         title: Text('WoTi Attendance'),
         actions: [
@@ -714,78 +603,76 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       body: RefreshIndicator(
         onRefresh: _initializeScreen,
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Real-time clock and date
-              Card(
-                color: kCardDark,
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Text(
-                        _formatTime(_currentTime),
-                        style: TextStyle(
-                          color: kDeloitteGreen,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        _formatDate(_currentTime),
-                        style: TextStyle(
-                          color: kTextFaint,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+          padding: EdgeInsets.all(isWideScreen ? 24 : 16),
+          child: Center(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: isWideScreen ? 800 : double.infinity,
               ),
-              SizedBox(height: 16),
-
-              // Status card
-              _buildStatusCard(),
-              SizedBox(height: 16),
-
-              // Location card
-              _buildLocationCard(),
-              SizedBox(height: 16),
-
-              // Facility card
-              _buildFacilityCard(),
-              SizedBox(height: 16),
-
-              // Photo section
-              _buildPhotoSection(),
-              SizedBox(height: 24),
-
-              // Check-in/Check-out buttons
-              if (_attendanceStatus == 'Checked Out') ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton.icon(
-                    onPressed: (_currentPosition != null && !_isCheckingIn)
-                        ? _checkIn
-                        : null,
-                    icon: _isCheckingIn
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                            ),
-                          )
-                        : Icon(Icons.login),
-                    label: Text(
-                      _isCheckingIn ? 'Checking In...' : 'Check In',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              child: Column(
+                children: [
+                  // Real-time clock and date
+                  Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(isWideScreen ? 24 : 20),
+                      child: Column(
+                        children: [
+                          Text(
+                            _formatTime(_currentTime),
+                            style: TextStyle(
+                              color: kDeloitteGreen,
+                              fontSize: isWideScreen ? 42 : 36,
+                              fontWeight: FontWeight.bold,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          _formatDate(_currentTime),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
                     ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Status card
+                  _buildStatusCard(),
+                  SizedBox(height: 16),
+
+                  // Location card
+                  _buildLocationCard(),
+                  SizedBox(height: 16),
+
+                  // Facility card
+                  _buildFacilityCard(),
+                  SizedBox(height: 24),
+
+                  // Check-in/Check-out buttons
+                  if (_attendanceStatus == 'Checked Out') ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: (_currentPosition != null && !_isCheckingIn)
+                            ? _checkIn
+                            : null,
+                        icon: _isCheckingIn
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    theme.elevatedButtonTheme.style?.foregroundColor?.resolve({}) ?? Colors.black,
+                                  ),
+                                ),
+                              )
+                            : Icon(Icons.login),
+                        label: Text(
+                          _isCheckingIn ? 'Checking In...' : 'Check In',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                   ),
                 ),
               ] else ...[
@@ -798,6 +685,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
                     ),
                     icon: _isCheckingOut
                         ? SizedBox(
@@ -805,7 +693,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Icon(Icons.logout),
