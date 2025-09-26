@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-const Color kDeloitteGreen = Color(0xFF00A859);
+import 'app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -131,147 +130,145 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.black,
+      // Use theme's scaffoldBackgroundColor
       appBar: AppBar(
         title: Text('Register for WoTi Attendance'),
-        backgroundColor: Colors.black,
-        foregroundColor: kDeloitteGreen,
+        // Remove backgroundColor to use the theme default
+        // backgroundColor: theme.appBarTheme.backgroundColor,
+        // The foreground color is now controlled by the theme
       ),
       body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(24),
-          child: Card(
-            color: Color(0xFF222222),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "WoTi Attendance",
-                      style: theme.textTheme.displayLarge,
-                    ),
-                    SizedBox(height: 24),
-                    TextFormField(
-                      controller: _nameController,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(labelText: 'Full Name'),
-                      validator: (val) => val!.isEmpty ? 'Enter your name' : null,
-                    ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(labelText: 'Email'),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (val) =>
-                          val!.isEmpty ? 'Enter your email' : null,
-                    ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(labelText: 'Password'),
-                      obscureText: true,
-                      validator: (val) => val!.length < 6
-                          ? 'Password must be at least 6 chars'
-                          : null,
-                    ),
-                    SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedRole,
-                      decoration: InputDecoration(labelText: 'Role'),
-                      items: [
-                        DropdownMenuItem(
-                            value: 'worker', child: Text('Worker')),
-                        DropdownMenuItem(
-                            value: 'manager', child: Text('Manager')),
-                        DropdownMenuItem(
-                            value: 'admin', child: Text('Admin')),
-                      ],
-                      onChanged: (val) =>
-                          setState(() => _selectedRole = val),
-                      validator: (val) =>
-                          val == null ? 'Select a role' : null,
-                    ),
-                    SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedRegionId,
-                      decoration: InputDecoration(labelText: 'Region'),
-                      style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
-  dropdownColor: const Color(0xFF222222), // optional: dark popup background
-                      items: _regions
-                          .map<DropdownMenuItem<String>>((r) => DropdownMenuItem<String>(
-                                value: r['id'] as String,
-                                child: Text(r['name'],
-                                    style: TextStyle(color: Colors.white)),
-                              ))
-                          .toList(),
-                      onChanged: (val) {
-                        setState(() => _selectedRegionId = val);
-                        if (val != null) _fetchCouncils(val);
-                      },
-                      validator: (val) =>
-                          val == null ? 'Select a region' : null,
-                    ),
-                    SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedCouncilId,
-                      decoration: InputDecoration(labelText: 'Council'),
-                      style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
-                      dropdownColor: const Color(0xFF222222), // optional: dark popup background
-                      items: _councils
-                          .map<DropdownMenuItem<String>>((c) => DropdownMenuItem<String>(
-                                value: c['id'] as String,
-                                child: Text(c['name'],
-                                    style: TextStyle(color: Colors.white)),
-                              ))
-                          .toList(),
-                      onChanged: (val) {
-                        setState(() => _selectedCouncilId = val);
-                        if (val != null) _fetchFacilities(val);
-                      },
-                      validator: (val) =>
-                          val == null ? 'Select a council' : null,
-                    ),
-                    SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedFacilityId,
-                      decoration: InputDecoration(labelText: 'Facility'),
-                      style: const TextStyle(color: Colors.white), // <-- makes selected value visible!
-                       dropdownColor: const Color(0xFF222222), // optional: dark popup background
-                      items: _facilities
-                          .map<DropdownMenuItem<String>>((f) => DropdownMenuItem<String>(
-                                value: f['id'] as String,
-                                child: Text(f['name'],
-                                    style: TextStyle(color: Colors.white)),
-                              ))
-                          .toList(),
-                      onChanged: (val) =>
-                          setState(() => _selectedFacilityId = val),
-                      validator: (val) =>
-                          val == null ? 'Select a facility' : null,
-                    ),
-                    SizedBox(height: 24),
-                    _loading
-                        ? CircularProgressIndicator(color: kDeloitteGreen)
-                        : SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _register,
-                              child: Text('Register'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kDeloitteGreen,
-                                foregroundColor: Colors.black,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 400),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(24),
+            child: Card(
+              color: theme.cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 10,
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "WoTi Attendance",
+                        style: theme.textTheme.displayLarge,
+                      ),
+                      SizedBox(height: 24),
+                      TextFormField(
+                        controller: _nameController,
+                        style: theme.textTheme.bodyMedium,
+                        decoration: InputDecoration(labelText: 'Full Name'),
+                        validator: (val) => val!.isEmpty ? 'Enter your name' : null,
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _emailController,
+                        style: theme.textTheme.bodyMedium,
+                        decoration: InputDecoration(labelText: 'Email'),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (val) =>
+                            val!.isEmpty ? 'Enter your email' : null,
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        style: theme.textTheme.bodyMedium,
+                        decoration: InputDecoration(labelText: 'Password'),
+                        obscureText: true,
+                        validator: (val) => val!.length < 6
+                            ? 'Password must be at least 6 chars'
+                            : null,
+                      ),
+                      SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: _selectedRole,
+                        decoration: InputDecoration(labelText: 'Role'),
+                        items: [
+                          DropdownMenuItem(
+                              value: 'worker', child: Text('Worker')),
+                          DropdownMenuItem(
+                              value: 'manager', child: Text('Manager')),
+                          DropdownMenuItem(
+                              value: 'admin', child: Text('Admin')),
+                        ],
+                        onChanged: (val) =>
+                            setState(() => _selectedRole = val),
+                        validator: (val) =>
+                            val == null ? 'Select a role' : null,
+                      ),
+                      SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: _selectedRegionId,
+                        decoration: InputDecoration(labelText: 'Region'),
+                        dropdownColor: theme.cardColor,
+                        items: _regions
+                            .map<DropdownMenuItem<String>>((r) => DropdownMenuItem<String>(
+                                  value: r['id'] as String,
+                                  child: Text(r['name'],
+                                      style: theme.textTheme.bodyMedium),
+                                ))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() => _selectedRegionId = val);
+                          if (val != null) _fetchCouncils(val);
+                        },
+                        validator: (val) =>
+                            val == null ? 'Select a region' : null,
+                      ),
+                      SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: _selectedCouncilId,
+                        decoration: InputDecoration(labelText: 'Council'),
+                        dropdownColor: theme.cardColor,
+                        items: _councils
+                            .map<DropdownMenuItem<String>>((c) => DropdownMenuItem<String>(
+                                  value: c['id'] as String,
+                                  child: Text(c['name'],
+                                      style: theme.textTheme.bodyMedium),
+                                ))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() => _selectedCouncilId = val);
+                          if (val != null) _fetchFacilities(val);
+                        },
+                        validator: (val) =>
+                            val == null ? 'Select a council' : null,
+                      ),
+                      SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: _selectedFacilityId,
+                        decoration: InputDecoration(labelText: 'Facility'),
+                        dropdownColor: theme.cardColor,
+                        items: _facilities
+                            .map<DropdownMenuItem<String>>((f) => DropdownMenuItem<String>(
+                                  value: f['id'] as String,
+                                  child: Text(f['name'],
+                                      style: theme.textTheme.bodyMedium),
+                                ))
+                            .toList(),
+                        onChanged: (val) =>
+                            setState(() => _selectedFacilityId = val),
+                        validator: (val) =>
+                            val == null ? 'Select a facility' : null,
+                      ),
+                      SizedBox(height: 24),
+                      _loading
+                          ? CircularProgressIndicator(color: theme.primaryColor)
+                          : SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _register,
+                                child: Text('Register'),
                               ),
                             ),
-                          ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'register_screen.dart';
 import 'attendance_screen.dart';
+import 'app_theme.dart';
 
 // Deloitte Green
-const Color kDeloitteGreen = Color(0xFF00A859);
+//const Color AppColors.deloitteGreen = Color(0xFF00A859);
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,75 +23,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'WoTi Attendance',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.black,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: kDeloitteGreen,
-          elevation: 0,
-        ),
-        colorScheme: ColorScheme.light(
-          primary: kDeloitteGreen,
-          secondary: kDeloitteGreen,
-          background: Colors.black,
-          surface: Color(0xFF222222),
-          onBackground: Colors.white,
-          onSurface: Colors.white,
-          onPrimary: Colors.black,
-          onSecondary: Colors.white,
-        ),
-        textTheme: TextTheme(
-          displayLarge: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.w800,
-            fontSize: 32,
-            color: kDeloitteGreen,
-            letterSpacing: 2,
-          ),
-          bodyMedium: TextStyle(
-            color: Colors.white,
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Color(0xFF222222),
-          labelStyle: TextStyle(color: Colors.white70),
-          hintStyle: TextStyle(color: Colors.white38),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: kDeloitteGreen),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: kDeloitteGreen),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: kDeloitteGreen, width: 2),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kDeloitteGreen,
-            foregroundColor: Colors.black,
-            minimumSize: Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: kDeloitteGreen,
-            textStyle: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       initialRoute: '/',
       routes: {
         '/': (context) => LoginScreen(),
@@ -118,15 +54,15 @@ class _LoginScreenState extends State<LoginScreen> {
     _checkSupabaseConnection();
   }
 
- Future<void> _checkSupabaseConnection() async {
-  try {
-    // Use user_profiles table which always has data
-    await Supabase.instance.client.from('user_profiles').select().limit(1);
-    setState(() => _connectionStatus = 'Connected');
-  } catch (e) {
-    setState(() => _connectionStatus = 'Not Connected');
+  Future<void> _checkSupabaseConnection() async {
+    try {
+      // Use user_profiles table which always has data
+      await Supabase.instance.client.from('user_profiles').select().limit(1);
+      setState(() => _connectionStatus = 'Connected');
+    } catch (e) {
+      setState(() => _connectionStatus = 'Not Connected');
+    }
   }
-}
 
   void submit() async {
     setState(() => _isLoading = true);
@@ -186,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? Icons.check_circle
                     : Icons.error,
                 color: _connectionStatus == 'Connected'
-                    ? kDeloitteGreen
+                    ? theme.primaryColor
                     : Colors.red,
                 size: 22,
               ),
@@ -194,80 +130,77 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ],
-        backgroundColor: Colors.black,
         elevation: 0,
       ),
       body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Logo Text
-              Text(
-                "WoTi Attendance",
-                style: theme.textTheme.displayLarge,
-              ),
-              SizedBox(height: 16),
-              Card(
-                color: theme.colorScheme.surface,
-                elevation: 10,
-                margin: EdgeInsets.symmetric(horizontal: 24),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18)),
-                child: Padding(
-                  padding: EdgeInsets.all(28),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.lock, size: 54, color: kDeloitteGreen),
-                      SizedBox(height: 8),
-                      Text(
-                        isLogin ? 'Welcome Back!' : 'Register Account',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: kDeloitteGreen,
-                          fontSize: 20,
-                        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 400),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Card(
+              color: theme.cardColor,
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18)),
+              child: Padding(
+                padding: EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "WoTi Attendance",
+                      style: theme.textTheme.displayLarge,
+                    ),
+                    SizedBox(height: 16),
+                    Icon(Icons.lock, size: 54, color: theme.primaryColor),
+                    SizedBox(height: 8),
+                    Text(
+                      isLogin ? 'Welcome Back!' : 'Register Account',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: theme.primaryColor,
+                        fontSize: 20,
                       ),
-                      SizedBox(height: 24),
-                      TextField(
-                        controller: _emailController,
-                        style: TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email, color: kDeloitteGreen),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
+                    ),
+                    SizedBox(height: 24),
+                    TextField(
+                      controller: _emailController,
+                      style: theme.textTheme.bodyMedium,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email, color: theme.primaryColor),
                       ),
-                      SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        style: TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock, color: kDeloitteGreen),
-                        ),
-                        obscureText: true,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      controller: _passwordController,
+                      style: theme.textTheme.bodyMedium,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock, color: theme.primaryColor),
                       ),
-                      SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: _isLoading
-                            ? Center(child: CircularProgressIndicator(color: kDeloitteGreen))
-                            : ElevatedButton(
-                                onPressed: submit,
-                                child: Text(isLogin ? 'Login' : 'Register'),
-                              ),
-                      ),
-                      SizedBox(height: 8),
-                      TextButton(
-  onPressed: () => Navigator.pushNamed(context, '/register'),
-  child: Text("Don't have an account? Register"),
-),
-                    ],
-                  ),
+                      obscureText: true,
+                    ),
+                    SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: _isLoading
+                          ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
+                          : ElevatedButton(
+                              onPressed: submit,
+                              child: Text(isLogin ? 'Login' : 'Register'),
+                            ),
+                    ),
+                    SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/register'),
+                      child: Text("Don't have an account? Register"),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
