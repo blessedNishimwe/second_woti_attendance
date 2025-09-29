@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'app_theme.dart';
+import 'utils/geofencing_utils.dart'; // <--- NEW IMPORT
 
 class AttendanceScreen extends StatefulWidget {
   @override
@@ -25,6 +26,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   double? _distanceToFacility;
 
   static const double FACILITY_RADIUS_METERS = 100.0;
+  final TextEditingController _activityController = TextEditingController(); // <--- NEW CONTROLLER
 
   @override
   void initState() {
@@ -36,6 +38,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _activityController.dispose(); // Dispose controller
     super.dispose();
   }
 
@@ -151,7 +154,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           _facility!['longitude'] != null &&
           _facility!['latitude'] != 0 &&
           _facility!['longitude'] != 0) {
-        double distance = Geolocator.distanceBetween(
+        // Use geofencing utility for distance calculation
+        double distance = GeofencingUtils.calculateDistanceMeters(
           position.latitude,
           position.longitude,
           _facility!['latitude'].toDouble(),
@@ -193,13 +197,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     try {
       final user = Supabase.instance.client.auth.currentUser;
+      final now = DateTime.now();
       if (user != null) {
         await Supabase.instance.client.from('attendance').insert({
           'user_id': user.id,
           'facility_id': _userProfile!['facility_id'],
-          'check_in_time': DateTime.now().toIso8601String(),
+          'check_in_time': now.toIso8601String(),
           'check_in_latitude': _currentPosition!.latitude,
           'check_in_longitude': _currentPosition!.longitude,
+          'day_of_week': DateFormat('EEEE').format(now),
+          'date': DateFormat('yyyy-MM-dd').format(now),
+          'activity_description': '', // blank at check-in
           'status': 'checked_in',
         });
 
@@ -250,8 +258,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             'check_out_time': checkOutTime.toIso8601String(),
             'check_out_latitude': _currentPosition!.latitude,
             'check_out_longitude': _currentPosition!.longitude,
-            'hours_worked': hoursWorked,
-            'status': 'completed',
+            'activity_description': _activityController.text,
+            'total_hours_worked': hoursWorked.toStringAsFixed(2),
+            'status': 'checked_out',
           })
           .eq('id', _currentAttendance!['id']);
 
@@ -370,6 +379,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                 ],
               ),
+              // <--- NEW: Activity Description Field, show only when checked in
+              SizedBox(height: 16),
+              TextField(
+                controller: _activityController,
+                decoration: InputDecoration(
+                  labelText: 'Description of activities',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+              SizedBox(height: 16),
             ],
           ],
         ),
