@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'register_screen.dart';
 import 'attendance_screen.dart';
 import 'app_theme.dart';
-import 'dashboard_screen.dart';
+import 'screens/dashboard_screen.dart';
 
 // Deloitte Green
 //const Color AppColors.deloitteGreen = Color(0xFF00A859);
@@ -83,7 +83,8 @@ class _LoginScreenState extends State<LoginScreen> {
           password: password,
         );
         if (response.user != null) {
-          Navigator.pushReplacementNamed(context, '/home');
+          //Show dashboard after login
+          Navigator.pushReplacementNamed(context, '/dashboard');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Login failed')),

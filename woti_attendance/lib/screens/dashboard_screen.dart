@@ -1,0 +1,319 @@
+// TODO Implement this library.
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/attendance_service.dart';
+import '../utils/timesheet_pdf_utils.dart';
+import 'package:printing/printing.dart';
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({Key? key}) : super(key: key);
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  DateTime _weekStart = _getStartOfWeek(DateTime.now());
+  DateTime _weekEnd = _getEndOfWeek(DateTime.now());
+  List<Map<String, String>> _summaryRows = [];
+  double _totalHours = 0.0;
+  bool _loading = false;
+
+  static DateTime _getStartOfWeek(DateTime date) =>
+      date.subtract(Duration(days: date.weekday - 1));
+  static DateTime _getEndOfWeek(DateTime date) =>
+      date.add(Duration(days: 7 - date.weekday));
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAttendanceSummary();
+  }
+
+  Future<void> _loadAttendanceSummary() async {
+    setState(() => _loading = true);
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final data = await prepareTimesheetDataForPdf(
+      userId: user.id,
+      startDate: _weekStart,
+      endDate: _weekEnd,
+    );
+
+    setState(() {
+      _summaryRows = List<Map<String, String>>.from(data['rows']);
+      _totalHours = data['totalHours'] as double;
+      _loading = false;
+    });
+  }
+
+  Future<void> _exportAndSharePdf() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final profileResp = await Supabase.instance.client
+        .from('user_profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+    final employeeName = profileResp?['name'] ?? 'Employee';
+
+    final pdfDoc = await TimesheetPdfUtils.generateTimesheetPdf(
+      employeeName: employeeName,
+      startDate: _weekStart,
+      endDate: _weekEnd,
+      rows: _summaryRows,
+      totalHours: _totalHours,
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => pdfDoc.save(),
+      name:
+          "Timesheet_${employeeName}_${DateFormat('yyyyMMdd').format(_weekStart)}.pdf",
+    );
+  }
+
+  void _pickWeek() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(DateTime.now().year - 1),
+      lastDate: DateTime(DateTime.now().year + 1),
+      initialDateRange: DateTimeRange(start: _weekStart, end: _weekEnd),
+    );
+    if (picked != null) {
+      setState(() {
+        _weekStart = picked.start;
+        _weekEnd = picked.end;
+      });
+      await _loadAttendanceSummary();
+    }
+  }
+
+  void _goToAttendanceRecorder() {
+    Navigator.pushNamed(context, '/home');
+  }
+
+  void _goToLeavesApplication() {
+    // TODO: Implement navigation to leaves application screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Leaves Application not implemented yet')),
+    );
+  }
+
+  void _goToLeavesStatus() {
+    // TODO: Implement navigation to leaves status screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Leaves Status not implemented yet')),
+    );
+  }
+
+  void _goToProfile() {
+    // TODO: Implement navigation to profile screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Profile not implemented yet')),
+    );
+  }
+
+  void _goToChangePassword() {
+    // TODO: Implement navigation to change password screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Change Password not implemented yet')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Dashboard"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf),
+            tooltip: "Export Timesheet PDF",
+            onPressed: _exportAndSharePdf,
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
+          children: [
+            Text(
+              "Welcome!",
+              style: theme.textTheme.displayLarge,
+            ),
+            SizedBox(height: 16),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _dashboardCard(
+                  icon: Icons.login,
+                  label: "Attendance Recorder",
+                  subtitle: "",
+                  onTap: _goToAttendanceRecorder,
+                  color: theme.primaryColor,
+                ),
+                _dashboardCard(
+                  icon: Icons.bar_chart,
+                  label: "Attendance Summary",
+                  subtitle: "",
+                  onTap: _pickWeek,
+                  color: Colors.blue,
+                ),
+                _dashboardCard(
+                  icon: Icons.receipt,
+                  label: "Leaves Application",
+                  subtitle: "",
+                  onTap: _goToLeavesApplication,
+                  color: Colors.orange,
+                ),
+                _dashboardCard(
+                  icon: Icons.timelapse,
+                  label: "Leaves Status",
+                  subtitle: "",
+                  onTap: _goToLeavesStatus,
+                  color: Colors.green,
+                ),
+                _dashboardCard(
+                  icon: Icons.person,
+                  label: "Profile",
+                  subtitle: "",
+                  onTap: _goToProfile,
+                  color: Colors.purple,
+                ),
+                _dashboardCard(
+                  icon: Icons.lock,
+                  label: "Change Password",
+                  subtitle: "",
+                  onTap: _goToChangePassword,
+                  color: Colors.red,
+                ),
+              ],
+            ),
+            SizedBox(height: 32),
+            Card(
+              color: theme.cardColor,
+              elevation: 6,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          "Timesheet: ${DateFormat('dd-MMM').format(_weekStart)} to ${DateFormat('dd-MMM').format(_weekEnd)}",
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        Spacer(),
+                        IconButton(
+                          icon: Icon(Icons.date_range),
+                          tooltip: "Pick week/month",
+                          onPressed: _pickWeek,
+                        ),
+                      ],
+                    ),
+                    Divider(),
+                    _loading
+                        ? Center(child: CircularProgressIndicator())
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: _summaryRows.length + 1,
+                            separatorBuilder: (_, __) => Divider(),
+                            itemBuilder: (context, i) {
+                              if (i == _summaryRows.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                          child: Text("Total Hours Worked:",
+                                              style: TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.bold))),
+                                      Text(_totalHours.toStringAsFixed(2),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: theme.primaryColor)),
+                                    ],
+                                  ),
+                                );
+                              }
+                              final row = _summaryRows[i];
+                              return ListTile(
+                                title: Text(
+                                  "${row['day']} (${row['date']})",
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                                subtitle: Text(
+                                  row['activities'] ?? '',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                                trailing: Text(
+                                  row['hoursWorked'] ?? '',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.primaryColor),
+                                ),
+                              );
+                            },
+                          ),
+                    SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.picture_as_pdf),
+                      label: Text("Export/Share Timesheet PDF"),
+                      onPressed: _loading ? null : _exportAndSharePdf,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dashboardCard({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        color: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        child: Container(
+          width: 165,
+          height: 140,
+          padding: EdgeInsets.all(18),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.12),
+                child: Icon(icon, color: color, size: 32),
+                radius: 28,
+              ),
+              SizedBox(height: 12),
+              Text(label,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              SizedBox(height: 4),
+              Text(subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600])),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'app_theme.dart';
 import 'utils/geofencing_utils.dart';
+import 'services/attendance_service.dart';
 
 class AttendanceScreen extends StatefulWidget {
   @override
