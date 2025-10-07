@@ -23,20 +23,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<Map<String, dynamic>> _facilities = [];
   bool _loading = false;
 
-  @override
   void initState() {
     super.initState();
     _fetchRegions();
   }
 
   Future<void> _fetchRegions() async {
-    final data = await Supabase.instance.client
-        .from('regions')
-        .select('id, name')
-        .order('name');
-    setState(() {
-      _regions = List<Map<String, dynamic>>.from(data);
-    });
+    try {
+      final response = await Supabase.instance.client
+          .from('regions')
+          .select()
+          .order('name');
+      setState(() {
+        _regions = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      print('Error fetching regions: $e');
+    }
   }
 
   Future<void> _fetchCouncils(String regionId) async {
@@ -46,14 +49,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _selectedCouncilId = null;
       _selectedFacilityId = null;
     });
-    final data = await Supabase.instance.client
-        .from('councils')
-        .select('id, name')
-        .eq('region_id', regionId)
-        .order('name');
-    setState(() {
-      _councils = List<Map<String, dynamic>>.from(data);
-    });
+    try {
+      final response = await Supabase.instance.client
+          .from('councils')
+          .select()
+          .eq('region_id', regionId)
+          .order('name');
+      setState(() {
+        _councils = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      print('Error fetching councils: $e');
+    }
   }
 
   Future<void> _fetchFacilities(String councilId) async {
@@ -61,24 +68,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _facilities = [];
       _selectedFacilityId = null;
     });
-    final data = await Supabase.instance.client
-        .from('facilities')
-        .select('id, name')
-        .eq('council_id', councilId)
-        .order('name');
-    setState(() {
-      _facilities = List<Map<String, dynamic>>.from(data);
-    });
+    try {
+      final response = await Supabase.instance.client
+          .from('facilities')
+          .select()
+          .eq('council_id', councilId)
+          .order('name');
+      setState(() {
+        _facilities = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      print('Error fetching facilities: $e');
+    }
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate() ||
-        _selectedRole == null ||
-        _selectedRegionId == null ||
-        _selectedCouncilId == null ||
-        _selectedFacilityId == null) {
+    if (!_formKey.currentState!.validate() || _selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please complete all fields')),
+        SnackBar(content: Text('Please complete all required fields')),
       );
       return;
     }
@@ -86,7 +93,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _loading = true);
 
     try {
-      // Register user with Supabase Auth and pass metadata for trigger
       final response = await Supabase.instance.client.auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -107,10 +113,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             .eq('id', user.id);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration successful! Please login.')),
+          SnackBar(content: Text('Registration successful! Redirecting...')),
         );
-        Future.delayed(Duration(seconds: 2), () {
-          Navigator.pop(context); // Go back to login
+        Future.delayed(Duration(seconds: 1), () {
+          Navigator.pushReplacementNamed(context, '/home');
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

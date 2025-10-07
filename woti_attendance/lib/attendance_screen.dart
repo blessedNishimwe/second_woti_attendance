@@ -25,6 +25,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic>? _facility;
   double? _distanceToFacility;
+  final TextEditingController _activityController = TextEditingController(); // <-- Added line
 
   // Constants for validation
   static const double FACILITY_RADIUS_METERS = 100.0; // 100 meters
@@ -39,6 +40,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _activityController.dispose();
     super.dispose();
   }
 
@@ -222,16 +224,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null) {
+        final now = DateTime.now();
         await Supabase.instance.client.from('attendance').insert({
           'user_id': user.id,
           'facility_id': _userProfile!['facility_id'],
-          'check_in_time': DateTime.now().toIso8601String(),
+          'check_in_time': now.toIso8601String(),
           'check_in_latitude': _currentPosition!.latitude,
           'check_in_longitude': _currentPosition!.longitude,
           'status': 'checked_in',
+          'date': DateFormat('yyyy-MM-dd').format(now),
+          'day_of_week': DateFormat('EEEE').format(now),
+          'activity_description': _activityController.text.trim().isNotEmpty 
+              ? _activityController.text.trim() 
+              : null,
         });
 
         await _checkCurrentAttendanceStatus();
+        
+        // Clear the activity field after check-in
+        _activityController.clear();
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -296,11 +307,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         'check_out_time': checkOutTime.toIso8601String(),
         'check_out_latitude': _currentPosition!.latitude,
         'check_out_longitude': _currentPosition!.longitude,
-        'hours_worked': hoursWorked,
+        'total_hours_worked': double.parse(hoursWorked.toStringAsFixed(2)),
         'status': 'completed',
+        'activity_description': _activityController.text.trim().isNotEmpty 
+            ? _activityController.text.trim() 
+            : _currentAttendance!['activity_description'],
       }).eq('id', _currentAttendance!['id']);
 
       await _checkCurrentAttendanceStatus();
+      
+      // Clear the activity field after check-out
+      _activityController.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -433,6 +450,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   // Facility card
                   _FacilityCard(facility: _facility),
                   const SizedBox(height: 24),
+
+                  // Activity description field
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        controller: _activityController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: 'Activity Description (Optional)',
+                          hintText: 'What did you work on today?',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          prefixIcon: Icon(Icons.description, color: AppColors.deloitteGreen),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   // Check-in/Check-out buttons
                   if (_attendanceStatus == 'Checked Out') ...[

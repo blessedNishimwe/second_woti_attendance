@@ -24,7 +24,7 @@ Future<Map<String, AttendanceDaySummary>> fetchAttendanceSummary({
 }) async {
   final response = await Supabase.instance.client
       .from('attendance')
-      .select('date, day_of_week, total_hours_worked, activity_description')
+      .select('check_in_time, check_out_time, total_hours_worked, activity_description, day_of_week, date')
       .eq('user_id', userId)
       .gte('date', DateFormat('yyyy-MM-dd').format(startDate))
       .lte('date', DateFormat('yyyy-MM-dd').format(endDate))
@@ -33,28 +33,38 @@ Future<Map<String, AttendanceDaySummary>> fetchAttendanceSummary({
   // Aggregate logs by date
   Map<String, AttendanceDaySummary> summary = {};
   for (var log in response) {
-    final date = log['date'] as String;
-    final day = log['day_of_week'] as String? ??
-        DateFormat('EEEE').format(DateTime.parse(date));
-    final hoursWorked =
-        double.tryParse(log['total_hours_worked'] ?? '0') ?? 0.0;
+    final dateStr = log['date'] as String? ?? DateFormat('yyyy-MM-dd').format(DateTime.parse(log['check_in_time'] as String));
+    final day = log['day_of_week'] as String? ?? DateFormat('EEEE').format(DateTime.parse(dateStr));
+    
+    // Get hours worked
+    double hoursWorked = 0.0;
+    if (log['total_hours_worked'] != null) {
+      hoursWorked = (log['total_hours_worked'] as num).toDouble();
+    } else if (log['check_out_time'] != null) {
+      // Calculate from check-in and check-out times if total_hours_worked is null
+      final checkInTime = DateTime.parse(log['check_in_time'] as String);
+      final checkOutTime = DateTime.parse(log['check_out_time'] as String);
+      final duration = checkOutTime.difference(checkInTime);
+      hoursWorked = duration.inMinutes / 60.0;
+    }
+    
     final activity = log['activity_description'] as String? ?? '';
 
-    if (!summary.containsKey(date)) {
-      summary[date] = AttendanceDaySummary(
+    if (!summary.containsKey(dateStr)) {
+      summary[dateStr] = AttendanceDaySummary(
         day: day,
-        date: date,
+        date: dateStr,
         hoursWorked: hoursWorked,
         activities: activity.isNotEmpty ? [activity] : [],
       );
     } else {
       // Sum hours and append activity
-      summary[date] = AttendanceDaySummary(
+      summary[dateStr] = AttendanceDaySummary(
         day: day,
-        date: date,
-        hoursWorked: summary[date]!.hoursWorked + hoursWorked,
+        date: dateStr,
+        hoursWorked: summary[dateStr]!.hoursWorked + hoursWorked,
         activities: [
-          ...summary[date]!.activities,
+          ...summary[dateStr]!.activities,
           if (activity.isNotEmpty) activity,
         ],
       );

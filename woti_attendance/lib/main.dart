@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'register_screen.dart';
-import 'attendance_screen.dart';
 import 'app_theme.dart';
-import 'screens/dashboard_screen.dart';
-
-// Deloitte Green
-//const Color AppColors.deloitteGreen = Color(0xFF00A859);
+import 'screens/main_navigation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,9 +29,8 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
-        '/home': (context) => AttendanceScreen(),
+        '/home': (context) => const MainNavigation(),
         '/register': (context) => RegisterScreen(),
-        '/dashboard': (context) => DashboardScreen(),
       },
     );
   }
@@ -83,8 +78,8 @@ class _LoginScreenState extends State<LoginScreen> {
           password: password,
         );
         if (response.user != null) {
-          //Show dashboard after login
-          Navigator.pushReplacementNamed(context, '/dashboard');
+          //Show main navigation after login
+          Navigator.pushReplacementNamed(context, '/home');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Login failed')),
