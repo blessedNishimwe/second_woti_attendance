@@ -42,8 +42,8 @@ Future<Map<String, AttendanceDaySummary>> fetchAttendanceSummary({
       hoursWorked = (log['total_hours_worked'] as num).toDouble();
     } else if (log['check_out_time'] != null) {
       // Calculate from check-in and check-out times if total_hours_worked is null
-      final checkInTime = DateTime.parse(log['check_in_time'] as String);
-      final checkOutTime = DateTime.parse(log['check_out_time'] as String);
+      final checkInTime = DateTime.parse(log['check_in_time'] as String).toUtc(); // parsed as UTC
+      final checkOutTime = DateTime.parse(log['check_out_time'] as String).toUtc(); // parsed as UTC
       final duration = checkOutTime.difference(checkInTime);
       hoursWorked = duration.inMinutes / 60.0;
     }

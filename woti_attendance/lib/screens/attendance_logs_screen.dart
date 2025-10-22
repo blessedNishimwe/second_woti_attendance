@@ -3,6 +3,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../app_theme.dart';
 
+/// Converts a UTC DateTime to Nairobi/EAT time (UTC+3) for display.
+/// Takes a UTC DateTime and adds 3 hours, then formats it.
+String _formatTimeForNairobi(DateTime utcTime) {
+  final nairobiTime = utcTime.add(Duration(hours: 3));
+  return DateFormat('HH:mm').format(nairobiTime);
+}
+
 class AttendanceLogsScreen extends StatefulWidget {
   static const routeName = '/logs';
   
@@ -158,12 +165,12 @@ class _AttendanceLogsScreenState extends State<AttendanceLogsScreen> {
                                 ),
                                 title: Text(
                                   DateFormat('EEEE, dd MMM yyyy').format(
-                                    DateTime.parse(log['check_in_time']),
+                                    DateTime.parse(log['check_in_time']).toUtc(), // parsed as UTC
                                   ),
                                 ),
                                 subtitle: Text(
-                                  'In: ${DateFormat('HH:mm').format(DateTime.parse(log['check_in_time']))} | '
-                                  'Out: ${log['check_out_time'] != null ? DateFormat('HH:mm').format(DateTime.parse(log['check_out_time'])) : '--'}',
+                                  'In: ${_formatTimeForNairobi(DateTime.parse(log['check_in_time']).toUtc())} | '
+                                  'Out: ${log['check_out_time'] != null ? _formatTimeForNairobi(DateTime.parse(log['check_out_time']).toUtc()) : '--'}',
                                 ),
                                 trailing: Text(
                                   log['total_hours_worked'] != null

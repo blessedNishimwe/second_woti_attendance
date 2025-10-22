@@ -8,6 +8,13 @@ import 'app_theme.dart';
 import 'utils/geofencing_utils.dart';
 import 'services/attendance_service.dart';
 
+/// Converts a UTC DateTime to Nairobi/EAT time (UTC+3) for display.
+/// Takes a UTC DateTime and adds 3 hours, then formats it.
+String _formatTimeForNairobi(DateTime utcTime) {
+  final nairobiTime = utcTime.add(Duration(hours: 3));
+  return DateFormat('HH:mm').format(nairobiTime);
+}
+
 class AttendanceScreen extends StatefulWidget {
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -224,11 +231,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null) {
-        final now = DateTime.now();
+        final now = DateTime.now().toUtc(); // stored in UTC
         await Supabase.instance.client.from('attendance').insert({
           'user_id': user.id,
           'facility_id': _userProfile!['facility_id'],
-          'check_in_time': now.toIso8601String(),
+          'check_in_time': now.toIso8601String(), // stored in UTC
           'check_in_latitude': _currentPosition!.latitude,
           'check_in_longitude': _currentPosition!.longitude,
           'status': 'checked_in',
@@ -299,12 +306,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     });
 
     try {
-      final checkInTime = DateTime.parse(_currentAttendance!['check_in_time']);
-      final checkOutTime = DateTime.now();
+      final checkInTime = DateTime.parse(_currentAttendance!['check_in_time']).toUtc(); // parsed as UTC
+      final checkOutTime = DateTime.now().toUtc(); // stored in UTC
       final hoursWorked = checkOutTime.difference(checkInTime).inMinutes / 60.0;
 
       await Supabase.instance.client.from('attendance').update({
-        'check_out_time': checkOutTime.toIso8601String(),
+        'check_out_time': checkOutTime.toIso8601String(), // stored in UTC
         'check_out_latitude': _currentPosition!.latitude,
         'check_out_longitude': _currentPosition!.longitude,
         'total_hours_worked': double.parse(hoursWorked.toStringAsFixed(2)),
@@ -355,8 +362,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   String _calculateCurrentHours() {
     if (_currentAttendance == null) return '0.00';
     try {
-      final checkInTime = DateTime.parse(_currentAttendance!['check_in_time']);
-      final now = DateTime.now();
+      final checkInTime = DateTime.parse(_currentAttendance!['check_in_time']).toUtc(); // parsed as UTC
+      final now = DateTime.now().toUtc();
       final hours = now.difference(checkInTime).inMinutes / 60.0;
       return hours >= 0 ? hours.toStringAsFixed(2) : '0.00';
     } catch (e) {
@@ -626,8 +633,8 @@ class _StatusCard extends StatelessWidget {
                     style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                   Text(
-                    DateFormat('HH:mm').format(
-                      DateTime.parse(currentAttendance!['check_in_time']),
+                    _formatTimeForNairobi(
+                      DateTime.parse(currentAttendance!['check_in_time']).toUtc(),
                     ),
                     style: TextStyle(
                       color: theme.textTheme.bodyMedium?.color,
