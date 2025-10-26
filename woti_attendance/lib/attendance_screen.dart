@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import 'app_theme.dart';
 import 'utils/geofencing_utils.dart';
 import 'services/attendance_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'widgets/check_in_map_sheet.dart';
 
 class AttendanceScreen extends StatefulWidget {
   @override
@@ -217,13 +219,34 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       );
     }
 
-    setState(() {
-      _isCheckingIn = true;
-    });
+    // Open map confirmation sheet
+    try {
+      final userLatLng = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+      final facilityLatLng = LatLng(
+        (_facility!['latitude'] as num).toDouble(),
+        (_facility!['longitude'] as num).toDouble(),
+      );
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => CheckInMapSheet(
+          userLatLng: userLatLng,
+          facilityLatLng: facilityLatLng,
+          facilityRadiusMeters: FACILITY_RADIUS_METERS,
+          onConfirm: _performSupabaseCheckIn,
+        ),
+      );
+    } catch (e) {
+      // If anything fails in map flow, fall back to direct check-in
+      await _performSupabaseCheckIn();
+    }
+  }
 
+  Future<void> _performSupabaseCheckIn() async {
+    setState(() => _isCheckingIn = true);
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
+      if (user != null && _currentPosition != null) {
         final now = DateTime.now();
         await Supabase.instance.client.from('attendance').insert({
           'user_id': user.id,
@@ -234,29 +257,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           'status': 'checked_in',
           'date': DateFormat('yyyy-MM-dd').format(now),
           'day_of_week': DateFormat('EEEE').format(now),
-          'activity_description': _activityController.text.trim().isNotEmpty 
-              ? _activityController.text.trim() 
+          'activity_description': _activityController.text.trim().isNotEmpty
+              ? _activityController.text.trim()
               : null,
         });
 
         await _checkCurrentAttendanceStatus();
-        
-        // Clear the activity field after check-in
         _activityController.clear();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Successfully checked in!'),
-            backgroundColor: AppColors.deloitteGreen,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Successfully checked in!'),
+              backgroundColor: AppColors.deloitteGreen,
+            ),
+          );
+        }
       }
     } catch (e) {
       _showError('Failed to check in: $e');
     } finally {
-      setState(() {
-        _isCheckingIn = false;
-      });
+      if (mounted) setState(() => _isCheckingIn = false);
     }
   }
 

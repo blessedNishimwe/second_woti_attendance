@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 import 'dashboard_screen.dart';
 import '../attendance_screen.dart';
 import 'timesheet_screen.dart';
 import 'profile_screen.dart';
 import '../app_theme.dart';
+import '../providers/attendance_provider.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({Key? key}) : super(key: key);
@@ -22,6 +23,15 @@ class _MainNavigationState extends State<MainNavigation> {
     const TimesheetScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize attendance provider when navigation starts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AttendanceProvider>(context, listen: false).initialize();
+    });
+  }
 
   void _onTabTapped(int index) {
     setState(() => _currentIndex = index);

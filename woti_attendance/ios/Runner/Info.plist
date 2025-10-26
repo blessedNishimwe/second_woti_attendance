@@ -46,6 +46,10 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	
+	<!-- Google Maps API Key (placeholder). Replace YOUR_IOS_MAPS_API_KEY -->
+	<key>GMSApiKey</key>
+	<string>YOUR_IOS_MAPS_API_KEY</string>
+
 	<!-- Location permissions -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs location access to verify your check-in/check-out at the facility.</string>
