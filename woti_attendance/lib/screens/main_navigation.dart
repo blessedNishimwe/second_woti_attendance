@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dashboard_screen.dart';
 import '../attendance_screen.dart';
+import 'optimized_attendance_screen.dart';
 import 'timesheet_screen.dart';
 import 'profile_screen.dart';
 import '../app_theme.dart';
 import '../providers/attendance_provider.dart';
+import '../providers/optimized_attendance_provider.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({Key? key}) : super(key: key);
@@ -19,7 +21,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> _screens = [
     const DashboardScreen(),
-    AttendanceScreen(),
+    const OptimizedAttendanceScreen(),
     const TimesheetScreen(),
     const ProfileScreen(),
   ];
@@ -27,9 +29,9 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   void initState() {
     super.initState();
-    // Initialize attendance provider when navigation starts
+    // Initialize optimized attendance provider when navigation starts
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AttendanceProvider>(context, listen: false).initialize();
+      Provider.of<OptimizedAttendanceProvider>(context, listen: false).initialize();
     });
   }
 

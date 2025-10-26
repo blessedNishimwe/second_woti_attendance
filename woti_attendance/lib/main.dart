@@ -7,6 +7,8 @@ import 'screens/main_navigation.dart';
 import 'di/service_locator.dart';
 import 'providers/auth_provider.dart';
 import 'providers/attendance_provider.dart';
+import 'providers/optimized_auth_provider.dart';
+import 'providers/optimized_attendance_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,8 +33,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => serviceLocator<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => serviceLocator<AttendanceProvider>()),
+        ChangeNotifierProvider(create: (_) => serviceLocator<OptimizedAuthProvider>()),
+        ChangeNotifierProvider(create: (_) => serviceLocator<OptimizedAttendanceProvider>()),
       ],
       child: MaterialApp(
         title: 'WoTi Attendance',
@@ -83,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = Provider.of<OptimizedAuthProvider>(context, listen: false);
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -157,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final media = MediaQuery.of(context);
     final isWide = media.size.width > 600;
 
-    return Consumer<AuthProvider>(
+    return Consumer<OptimizedAuthProvider>(
       builder: (context, authProvider, child) {
         return Scaffold(
           appBar: AppBar(
